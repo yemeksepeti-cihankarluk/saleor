@@ -1594,8 +1594,10 @@ class Category(ModelObjectType):
         lambda: CategoryCountableConnection,
         description="List of ancestors of the category.",
     )
-    products = ConnectionField(
+    products = FilterConnectionField(
         ProductCountableConnection,
+        filter=ProductFilterInput(description="Filtering options for products."),
+        sort_by=ProductOrder(description="Sort products."),
         channel=graphene.String(
             description="Slug of a channel for which the data should be returned."
         ),
@@ -1694,6 +1696,9 @@ class Category(ModelObjectType):
             qs = qs.filter(channel_listings__channel__slug=channel)
         qs = qs.filter(category__in=tree)
         qs = ChannelQsContext(qs=qs, channel_slug=channel)
+
+        kwargs["channel"] = channel
+        qs = filter_connection_queryset(qs, kwargs)
         return create_connection_slice(qs, info, kwargs, ProductCountableConnection)
 
     @staticmethod
